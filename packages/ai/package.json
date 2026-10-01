@@ -1,0 +1,21 @@
+{
+  "name": "@analyzer/ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Framework-independent AI orchestration: provider abstraction, context building, prompt registry, structured output validation, and evidence grounding",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "vitest": "^3.2.0"
+  }
+}

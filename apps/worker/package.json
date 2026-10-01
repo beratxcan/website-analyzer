@@ -1,0 +1,39 @@
+{
+  "name": "@analyzer/worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Website Analyzer background worker (NestJS application context + BullMQ)",
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "prisma generate --schema ../api/prisma/schema.prisma && nest build",
+    "start": "node dist/main.js",
+    "typecheck": "prisma generate --schema ../api/prisma/schema.prisma && tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@analyzer/ai": "workspace:*",
+    "@analyzer/analysis": "workspace:*",
+    "@analyzer/config": "workspace:*",
+    "@analyzer/contracts": "workspace:*",
+    "@analyzer/shared": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@prisma/client": "^6.10.0",
+    "bullmq": "^5.40.0",
+    "prisma": "^6.10.0",
+    "ioredis": "^5.6.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.30.0",
+    "@nestjs/cli": "^11.0.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
+    "eslint": "^9.30.0",
+    "pg": "^8.16.0",
+    "typescript-eslint": "^8.35.0",
+    "vitest": "^3.2.0"
+  }
+}

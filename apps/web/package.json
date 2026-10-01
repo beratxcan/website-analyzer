@@ -1,0 +1,42 @@
+{
+  "name": "@analyzer/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Website Analyzer dashboard (Next.js)",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@analyzer/contracts": "workspace:*",
+    "@hookform/resolvers": "^5.2.0",
+    "@tanstack/react-query": "^5.70.0",
+    "@tanstack/react-table": "^8.21.3",
+    "next": "^15.3.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.55.0",
+    "recharts": "^3.10.1",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "eslint": "^9.30.0",
+    "eslint-config-next": "^15.3.0",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^4.1.0",
+    "vitest": "^3.2.0"
+  }
+}

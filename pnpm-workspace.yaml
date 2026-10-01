@@ -1,0 +1,21 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Security overrides (see `pnpm audit`). Only patch-level bumps within a major
+# range are applied; transitive majors with a real breaking chain are tracked as
+# accepted risk in the README instead of being forced.
+overrides:
+  # PostCSS advisories (arbitrary file read / path traversal): patched in 8.5.23.
+  postcss@<8.5.23: ^8.5.23
+
+# Approved dependency lifecycle scripts (pnpm 11 `allowBuilds`).
+allowBuilds:
+  esbuild: true
+  "@scarf/scarf": true
+  "@swc/core": true
+  msgpackr-extract: true
+  prisma: true
+  "@prisma/client": true
+  "@prisma/engines": true
+  unrs-resolver: true

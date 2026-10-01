@@ -1,0 +1,149 @@
+name: website-analyzer-prod
+
+# Production-shaped orchestration for the images built by the apps/* Dockerfiles.
+# Keep local development on infrastructure/docker-compose.yml (databases only).
+#
+#   cp .env.example .env.production   # then set real secrets
+#   docker compose -f infrastructure/docker-compose.prod.yml --env-file .env.production build
+#   docker compose -f infrastructure/docker-compose.prod.yml --env-file .env.production \
+#     --profile tools run --rm migrate
+#   docker compose -f infrastructure/docker-compose.prod.yml --env-file .env.production up -d
+#
+# Differences from the development stack, deliberately:
+#   * secrets are required (`:?`) — nothing falls back to a development default
+#   * PostgreSQL/Redis publish no host ports (compose network only)
+#   * services run with `init` and a grace period so they shut down gracefully
+#   * the API serves HSTS and disables interactive docs by default
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # One-off migration runner: `--profile tools run --rm migrate`.
+  migrate:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ['tools']
+    command: ['pnpm', '--filter', '@analyzer/api', 'exec', 'prisma', 'migrate', 'deploy']
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      NODE_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:?set REDIS_URL}
+      WEB_URL: ${WEB_URL:?set WEB_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET}
+      # TLS terminates in front of the API: enable HSTS, trust one proxy hop.
+      HSTS_ENABLED: ${HSTS_ENABLED:-true}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - '${API_PORT:-4000}:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://127.0.0.1:4000/health/ready\").then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    init: true
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:?set REDIS_URL}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
+      AI_CONCURRENCY: ${AI_CONCURRENCY:-1}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      AI_ENABLED: ${AI_ENABLED:-true}
+      AI_PROVIDER: ${AI_PROVIDER:-openai-compatible}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_API_KEY: ${AI_API_KEY:?set AI_API_KEY when AI_ENABLED=true}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      FETCH_CONNECTION_TIMEOUT_MS: ${FETCH_CONNECTION_TIMEOUT_MS:-10000}
+      FETCH_TOTAL_TIMEOUT_MS: ${FETCH_TOTAL_TIMEOUT_MS:-30000}
+      FETCH_MAX_REDIRECTS: ${FETCH_MAX_REDIRECTS:-5}
+      FETCH_MAX_RESPONSE_BYTES: ${FETCH_MAX_RESPONSE_BYTES:-5000000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    init: true
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    depends_on:
+      - api
+    healthcheck:
+      test: ['CMD-SHELL', 'node -e "fetch(\"http://127.0.0.1:3000/login\").then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    init: true
+    stop_grace_period: 30s
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

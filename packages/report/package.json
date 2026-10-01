@@ -1,0 +1,22 @@
+{
+  "name": "@analyzer/report",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Framework-independent professional report layer: neutral report document model, builder, and server-side PDF renderer",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@analyzer/analysis": "workspace:*",
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    name: Install · Typecheck · Lint · Test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-change-me-please
+      JWT_REFRESH_SECRET: ci-refresh-secret-change-me-please
+      # Deterministic, keyless AI behavior: no provider smoke test in CI.
+      AI_ENABLED: 'false'
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: pnpm --filter @analyzer/api exec prisma validate
+
+      - name: Apply migrations and check for schema drift
+        # Migrations must apply cleanly to an empty database, and the committed
+        # migrations must exactly match the datamodel (no drift).
+        run: |
+          pnpm --filter @analyzer/api exec prisma migrate deploy
+          pnpm --filter @analyzer/api exec prisma migrate diff \
+            --from-schema-datasource prisma/schema.prisma \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Dependency audit (production, informational)
+        # Informational only: a newly published advisory must not block a PR.
+        continue-on-error: true
+        run: pnpm audit --prod --audit-level=high

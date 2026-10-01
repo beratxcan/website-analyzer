@@ -1,0 +1,1 @@
+export const ANALYSIS_QUEUE = Symbol('ANALYSIS_QUEUE');

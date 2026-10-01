@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acme Analytics Platform — Official Website</title>
+  <meta name="description" content="Acme Analytics helps product teams understand their websites with fast, deterministic technical audits.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://example.com/">
+  <link rel="sitemap" href="/sitemap.xml">
+  <link rel="preconnect" href="https://fonts.example.com">
+  <link rel="stylesheet" href="/styles.css">
+  <meta property="og:title" content="Acme Analytics Platform">
+  <meta property="og:description" content="Fast, deterministic website audits for product teams.">
+  <meta property="og:image" content="https://example.com/og.png">
+  <script src="/app.js"></script>
+  <script>window.appConfig = { env: 'production', version: '1.0' };</script>
+  <style>.hero { color: #111827; font-weight: 600; }</style>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/about">About</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/docs">Documentation</a>
+    </nav>
+  </header>
+  <main>
+    <h1>Welcome to Acme Analytics</h1>
+    <h2>Why Acme Analytics</h2>
+    <p>Acme Analytics provides a deterministic analysis engine that fetches a single website, normalizes its HTML once, and runs independent analyzers across SEO, technical health, content, accessibility, and performance dimensions. Every finding carries observable evidence so teams can verify results without trusting an opaque black box.</p>
+    <p>Because the scoring engine is fully deterministic, the same website analyzed twice produces identical scores. This makes regressions easy to track: a change to the page either moves the score or it does not, and the version metadata tells you exactly which analyzer and scoring revisions produced the result.</p>
+    <h3>Get started</h3>
+    <p>Create a project, add a website, and run your first analysis in under a minute. The audit covers everything from missing meta descriptions and heading hierarchy to security response headers and static performance signals such as script counts and image dimensions.</p>
+    <p>No browser automation is required for the core audit. The engine deliberately fetches only the main HTML document, keeping the attack surface small and the analysis fast, reliable, and repeatable across environments.</p>
+    <img src="/images/hero.png" width="1200" height="630" alt="Dashboard showing category scores for an analyzed website">
+    <img src="/images/features.png" width="800" height="400" alt="Feature overview diagram">
+    <form>
+      <label for="email-newsletter">Email address</label>
+      <input id="email-newsletter" type="email" name="email">
+      <button type="submit">Subscribe</button>
+    </form>
+  </main>
+  <footer>
+    <p>Copyright 2026 Acme Analytics. All rights reserved.</p>
+  </footer>
+</body>
+</html>

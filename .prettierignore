@@ -1,0 +1,15 @@
+node_modules
+dist
+.next
+out
+coverage
+.turbo
+pnpm-lock.yaml
+
+# Local development tooling and working notes — never published.
+.freebuff
+.ai
+.private
+docs/ai
+docs
+infrastructure/data

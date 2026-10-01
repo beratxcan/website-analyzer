@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Environment — never commit real secrets
+.env
+.env.*
+!.env.example
+
+# Turborepo cache
+.turbo/
+
+# Test coverage
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Local infrastructure data
+infrastructure/data/
+postgres-data/
+redis-data/
+
+# Internal development artifacts — never published.
+# Local working notes and local tooling state kept out of the public repository.
+docs/ai/
+.ai/
+.private/
+.freebuff/

@@ -1,0 +1,27 @@
+# Never ship local state, secrets, or build artifacts into an image.
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+**/coverage
+**/tsconfig.tsbuildinfo
+
+# Environment files (secrets live in the orchestrator, not the image)
+.env
+.env.*
+!.env.example
+
+# Git / editor / local tooling metadata
+.git
+.gitignore
+.gitattributes
+**/.vscode
+**/.idea
+**/.freebuff
+
+# Local infrastructure data, logs and docs
+infrastructure/*.log
+**/*.log
+docs
+*.md
+!README.md

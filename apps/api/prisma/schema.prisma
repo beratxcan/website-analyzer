@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  projects      Project[]
+  refreshTokens RefreshToken[]
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websites    Website[]
+
+  @@index([userId])
+}
+
+model Website {
+  id            String     @id @default(uuid())
+  projectId     String
+  name          String
+  url           String
+  normalizedUrl String
+  host          String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  analyses      Analysis[]
+
+  @@unique([projectId, normalizedUrl])
+  @@index([projectId])
+}
+
+// User-facing analysis history record. One logical analysis maps to one or
+// more execution attempts (AnalysisRun).
+model Analysis {
+  id          String   @id @default(uuid())
+  websiteId   String
+  status      AnalysisStatus @default(PENDING)
+  latestRunId String? @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  website     Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  latestRun   AnalysisRun? @relation("LatestRun", fields: [latestRunId], references: [id], onDelete: SetNull)
+  runs        AnalysisRun[] @relation("AnalysisRuns")
+
+  @@index([websiteId, createdAt])
+}
+
+enum AnalysisStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// A single execution attempt of an analysis. The database is the source of
+// truth for run state; the queue only references the run by id.
+model AnalysisRun {
+  id             String             @id @default(uuid())
+  analysisId     String
+  status         AnalysisRunStatus  @default(QUEUED)
+  attempt        Int                @default(0)
+  engineVersion  String
+  scoringVersion String
+  startedAt      DateTime?
+  completedAt    DateTime?
+  failedAt       DateTime?
+  cancelledAt    DateTime?
+  errorCode      String?
+  errorMessage   String?
+  progress       Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  analysis       Analysis           @relation("AnalysisRuns", fields: [analysisId], references: [id], onDelete: Cascade)
+  latestOf       Analysis?          @relation("LatestRun")
+  findings       AnalysisFinding[]
+  scores         AnalysisScore[]
+  aiResult       AiAnalysisResult?
+
+  @@index([analysisId, createdAt])
+  @@index([status, startedAt])
+}
+
+enum AnalysisRunStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  PARTIALLY_COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// Persisted findings. The (analysisRunId, ruleCode) uniqueness doubles as an
+// idempotency backstop: a run can never persist the same rule twice.
+model AnalysisFinding {
+  id            String       @id @default(uuid())
+  analysisRunId String
+  ruleCode      String
+  category      String
+  severity      String
+  title         String
+  description   String
+  scoreImpact   Int
+  evidence      Json
+  createdAt     DateTime     @default(now())
+  run           AnalysisRun  @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisRunId, ruleCode])
+  @@index([analysisRunId])
+}
+
+// Score snapshots: one row per category plus an 'overall' row. The dashboard
+// reads these without re-running the scoring engine.
+model AnalysisScore {
+  id            String      @id @default(uuid())
+  analysisRunId String
+  category      String
+  score         Int
+  weight        Float?
+  createdAt     DateTime    @default(now())
+  run           AnalysisRun @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisRunId, category])
+  @@index([analysisRunId])
+}
+
+// AI enrichment results. One per run; the deterministic run lifecycle is
+// deliberately independent — an AI failure never fails the AnalysisRun.
+enum AIResultStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+model AiAnalysisResult {
+  id              String         @id @default(uuid())
+  analysisRunId   String         @unique
+  status          AIResultStatus @default(PENDING)
+  task            String
+  provider        String?
+  model           String?
+  promptVersion   String?
+  schemaVersion   String?
+  summary         Json?
+  recommendations Json?
+  inputTokens     Int?
+  outputTokens    Int?
+  totalTokens     Int?
+  estimatedCostUsd Float?
+  currency        String?
+  latencyMs       Int?
+  errorCode       String?
+  errorMessage    String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  run             AnalysisRun     @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+
+  @@index([status, updatedAt])
+}
+
+// Refresh tokens are stored as SHA-256 hashes; the raw token only ever lives
+// in the HttpOnly cookie. Rotation marks the previous row revoked.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@analyzer/config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Centralized environment configuration and validation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "ioredis": "^5.6.0",
+    "vitest": "^3.2.0"
+  }
+}
